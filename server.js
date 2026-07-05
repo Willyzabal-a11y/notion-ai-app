@@ -105,7 +105,9 @@ const tools = [
         required: ["page_id", "content"],
       },
     },
-async function runTool(name, args) {
+{ type: "function", function: { name: "query_database", description: "Consulta filas de una base de datos.", parameters: { type: "object", properties: { database_id: { type: "string" } }, required: ["database_id"] } } },
+  { type: "function", function: { name: "create_database_item", description: "Crea un elemento en una base de datos.", parameters: { type: "object", properties: { database_id: { type: "string" }, properties: { type: "object" } }, required: ["database_id", "properties"] } } },
+];async function runTool(name, args) {
   switch (name) {
     case "search_notion": {
       const data = await notionRequest("POST", "/search", { query: args.query });
