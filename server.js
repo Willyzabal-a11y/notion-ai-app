@@ -14,10 +14,8 @@ const NOTION_TOKEN = process.env.NOTION_TOKEN;
 const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
 const NOTION_VERSION = "2022-06-28";
 
-if (!OPENAI_API_KEY) console.warn("⚠️  Falta OPENAI_API_KEY en variables de entorno");
-if (!NOTION_TOKEN) console.warn("⚠️  Falta NOTION_TOKEN en variables de entorno");
-
-// ---------- Helpers de Notion ----------
+if (!OPENAI_API_KEY) console.warn("Falta OPENAI_API_KEY");
+if (!NOTION_TOKEN) console.warn("Falta NOTION_TOKEN");
 
 async function notionRequest(method, path, body) {
   const res = await fetch(`https://api.notion.com/v1${path}`, {
@@ -46,68 +44,16 @@ function textBlock(text) {
 
 function extractPlainText(richTextArray = []) {
   return richTextArray.map((t) => t.plain_text || "").join("");
-}
+}const tools = [
+  { type: "function", function: { name: "search_notion", description: "Busca paginas o bases de datos en Notion por texto.", parameters: { type: "object", properties: { query: { type: "string" } }, required: ["query"] } } },
+  { type: "function", function: { name: "get_page_content", description: "Obtiene el titulo y contenido de una pagina de Notion.", parameters: { type: "object", properties: { page_id: { type: "string" } }, required: ["page_id"] } } },
+  { type: "function", function: { name: "create_page", description: "Crea una pagina de Notion dentro de otra pagina.", parameters: { type: "object", properties: { parent_page_id: { type: "string" }, title: { type: "string" }, content: { type: "string" } }, required: ["parent_page_id", "title"] } } },
+  { type: "function", function: { name: "append_to_page", description: "Agrega contenido al final de una pagina existente.", parameters: { type: "object", properties: { page_id: { type: "string" }, content: { type: "string" } }, required: ["page_id", "content"] } } },
+  { type: "function", function: { name: "query_database", description: "Consulta los elementos de una base de datos de Notion.", parameters: { type: "object", properties: { database_id: { type: "string" } }, required: ["database_id"] } } },
+  { type: "function", function: { name: "create_database_item", description: "Crea un elemento en una base de datos de Notion.", parameters: { type: "object", properties: { database_id: { type: "string" }, properties: { type: "object" } }, required: ["database_id", "properties"] } } },
+];
 
-// ---------- Herramientas disponibles para la IA ----------
-
-const tools = [
-  {
-    type: "function",
-    function: {
-      name: "search_notion",
-      description: "Busca páginas o bases de datos en Notion por texto.",
-      parameters: {
-        type: "object",
-        properties: { query: { type: "string", description: "Texto a buscar" } },
-        required: ["query"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "get_page_content",
-      description: "Obtiene el título y el contenido (texto) de una página de Notion dado su ID.",
-      parameters: {
-        type: "object",
-        properties: { page_id: { type: "string" } },
-        required: ["page_id"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "create_page",
-      description: "Crea una nueva página de Notion dentro de otra página (parent_page_id), con título y contenido inicial.",
-      parameters: {
-        type: "object",
-        properties: {
-          parent_page_id: { type: "string", description: "ID de la página donde se creará la nueva página" },
-          title: { type: "string" },
-          content: { type: "string", description: "Texto del contenido inicial (opcional)" },
-        },
-        required: ["parent_page_id", "title"],
-      },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "append_to_page",
-      description: "Agrega texto/contenido al final de una página existente.",
-      parameters: {
-        type: "object",
-        properties: {
-          page_id: { type: "string" },
-          content: { type: "string" },
-        },
-        required: ["page_id", "content"],
-      },
-    },
-{ type: "function", function: { name: "query_database", description: "Consulta filas de una base de datos.", parameters: { type: "object", properties: { database_id: { type: "string" } }, required: ["database_id"] } } },
-  { type: "function", function: { name: "create_database_item", description: "Crea un elemento en una base de datos.", parameters: { type: "object", properties: { database_id: { type: "string" }, properties: { type: "object" } }, required: ["database_id", "properties"] } } },
-];async function runTool(name, args) {
+async function runTool(name, args) {
   switch (name) {
     case "search_notion": {
       const data = await notionRequest("POST", "/search", { query: args.query });
@@ -152,9 +98,7 @@ const tools = [
     default:
       throw new Error(`Herramienta desconocida: ${name}`);
   }
-}
-
-app.post("/api/chat", async (req, res) => {
+    }app.post("/api/chat", async (req, res) => {
   try {
     const { messages } = req.body;
     const systemMessage = {
@@ -196,8 +140,4 @@ app.post("/api/chat", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
-  }
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
+      }
